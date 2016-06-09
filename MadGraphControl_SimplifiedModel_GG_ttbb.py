@@ -3,7 +3,7 @@ include ( 'MC15JobOptions/MadGraphControl_SimplifiedModelPreInclude.py' )
 
 fields = runArgs.jobConfig[0].replace(".py","").split("_")
 # 0                   1        2  3    4        5         6
-# MC15.<dsid>.MGPy8EG_A14N23LO_GG_tbn1_<gluino>_<squark>_<neutralino>.py
+# MC15.<dsid>.MGPy8EG_A14N23LO_GG_ttbb_<gluino>_<squark>_<neutralino>.py
 
 gentype = fields[2]
 decaytype = fields[3]
@@ -15,7 +15,6 @@ masses['1000021'] = gluino_mass
 masses['1000005'] = squark_mass # sbottom
 masses['1000006'] = squark_mass # stop
 masses['1000022'] = neutralino_mass
-masses['1000024'] = neutralino_mass + 2 # chargino_1
 
 process = '''
 generate p p > go go $ susysq susysq~ @1
@@ -24,7 +23,7 @@ add process p p > go go j j $ susysq susysq~ @3
 '''
 njets = 2
 
-evgenLog.info('Gtb grid point {}'.format(runArgs.runNumber))
+evgenLog.info('GGttbb grid point {}'.format(runArgs.runNumber))
 evgenLog.info('gluino mass: {}'.format(gluino_mass))
 evgenLog.info('squark mass: {}'.format(squark_mass))
 evgenLog.info('neutralino mass: {}'.format(neutralino_mass))
