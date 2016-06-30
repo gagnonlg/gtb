@@ -2,6 +2,7 @@ from __future__ import print_function
 import argparse
 import ROOT
 import os.path
+import itertools as it
 
 GEV = 1.0/1000
 
@@ -37,6 +38,10 @@ for i in [1,2,3]:
         'largejet_m': ROOT.TH1D('h_{}_largejet_m'.format(i), '', 200, 0, 2000),
         'largejet_n': ROOT.TH1D('h_{}_largejet_n'.format(i), '', 20, 0, 20),
         'largejet_n_m100': ROOT.TH1D('h_{}_largejet_n_m100'.format(i), '', 20, 0, 20),
+        'lepton_pt': ROOT.TH1D('h_{}_lepton_pt'.format(i), '', 200, 0,2000),
+        'lepton_eta': ROOT.TH1D('h_{}_lepton_eta'.format(i), '', 100, 0, 5),
+        'lepton_phi': ROOT.TH1D('h_{}_lepton_phi'.format(i), '', 100, 0, 5),
+        'lepton_n': ROOT.TH1D('h_{}_lepton_n'.format(i), '', 20, 0, 20),
         'MET_phi': ROOT.TH1D('h_{}_MET_phi'.format(i), '', 100, 0, 5),
         'MET_mag': ROOT.TH1D('h_{}_MET_mag'.format(i), '', 200, 0, 2000)
     }
@@ -88,6 +93,19 @@ try:
 
         hists[ntops]['largejet_n'].Fill(nlargejets)
         hists[ntops]['largejet_n_m100'].Fill(nlargejets_m100)
+
+        # leptons
+        nleptons = 0
+        for lepton in it.chain(event.TruthElectrons, event.TruthMuons):
+            # https://twiki.cern.ch/twiki/bin/view/AtlasProtected/MCTruthClassifier
+            t = lepton.auxdata('unsigned int')('classifierParticleType')
+            isprompt = (t == 2) or (t == 6)
+            if (lepton.pt()*GEV) > 20 and abs(lepton.eta()) < 2.5 and isprompt:
+                hists[ntops]['lepton_pt'].Fill(lepton.pt() * GEV)
+                hists[ntops]['lepton_eta'].Fill(abs(lepton.eta()))
+                hists[ntops]['lepton_phi'].Fill(lepton.phi())
+                nleptons += 1
+        hists[ntops]['lepton_n'].Fill(nleptons)
 
         # MET
         met = event.MET_Truth['NonInt']
