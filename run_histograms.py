@@ -47,6 +47,7 @@ for i in [1,2,3]:
         'MET_mag': ROOT.TH1D('h_{}_MET_mag'.format(i), '', 200, 0, 2000),
         'meff': ROOT.TH1D('h_{}_meff'.format(i), '', 500, 0, 5000),
         'mt': ROOT.TH1D('h_{}_mt'.format(i), '', 200, 0, 2000),
+        'mtb': ROOT.TH1D('h_{}_mtb'.format(i), '', 200, 0, 2000),
     }
 
 
@@ -69,6 +70,7 @@ try:
         # small-R jets and b-jets
         njets = 0
         nbjets = 0
+        bjets = []
         for jet in event.AntiKt4TruthJets:
             if (jet.pt() * GEV) > 20 and abs(jet.eta()) < 2.8:
                 hists[ntops]['jet_pt'].Fill(jet.pt() * GEV)
@@ -80,6 +82,7 @@ try:
                     hists[ntops]['bjet_pt'].Fill(jet.pt() * GEV)
                     hists[ntops]['bjet_eta'].Fill(abs(jet.eta()))
                     hists[ntops]['bjet_phi'].Fill(jet.phi())
+                    bjets.append((jet.pt()*GEV, jet.phi()))
                     nbjets += 1
 
         hists[ntops]['jet_n'].Fill(njets)
@@ -129,6 +132,12 @@ try:
         if nleptons > 0:
             mt = sqrt(2*leading[0]*(met.met()*GEV)*(1 - cos(leading[1] - met.phi())))
             hists[ntops]['mt'].Fill(mt)
+
+        mtblist = []
+        for (pt,phi) in sorted(bjets,reverse=True)[0:3]:
+            mtblist.append(sqrt(2*pt*(met.met()*GEV)*(1 - cos(phi - met.phi()))))
+        if len(mtblist) == 3:
+            hists[ntops]['mtb'].Fill(min(mtblist))
 
 
 except RuntimeError:
