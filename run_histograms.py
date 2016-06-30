@@ -3,6 +3,7 @@ import argparse
 import ROOT
 import os.path
 import itertools as it
+from math import cos,sqrt
 
 GEV = 1.0/1000
 
@@ -44,7 +45,8 @@ for i in [1,2,3]:
         'lepton_n': ROOT.TH1D('h_{}_lepton_n'.format(i), '', 20, 0, 20),
         'MET_phi': ROOT.TH1D('h_{}_MET_phi'.format(i), '', 100, 0, 5),
         'MET_mag': ROOT.TH1D('h_{}_MET_mag'.format(i), '', 200, 0, 2000),
-        'meff': ROOT.TH1D('h_{}_meff'.format(i), '', 500, 0, 5000)
+        'meff': ROOT.TH1D('h_{}_meff'.format(i), '', 500, 0, 5000),
+        'mt': ROOT.TH1D('h_{}_mt'.format(i), '', 200, 0, 2000),
     }
 
 
@@ -62,6 +64,7 @@ try:
         event_dict[ntops] += 1
 
         meff = 0
+        mt = 0
 
         # small-R jets and b-jets
         njets = 0
@@ -100,6 +103,7 @@ try:
 
         # leptons
         nleptons = 0
+        leading = (-float('inf'), None)
         for lepton in it.chain(event.TruthElectrons, event.TruthMuons):
             # https://twiki.cern.ch/twiki/bin/view/AtlasProtected/MCTruthClassifier
             t = lepton.auxdata('unsigned int')('classifierParticleType')
@@ -110,15 +114,22 @@ try:
                 hists[ntops]['lepton_phi'].Fill(lepton.phi())
                 meff += (lepton.pt() * GEV)
                 nleptons += 1
+                if (lepton.pt() * GEV) > leading[0]:
+                    leading = (lepton.pt() * GEV, lepton.phi())
         hists[ntops]['lepton_n'].Fill(nleptons)
 
         # MET
         met = event.MET_Truth['NonInt']
         hists[ntops]['MET_phi'].Fill(met.phi())
         hists[ntops]['MET_mag'].Fill(met.met() * GEV)
-        meff += (met.met() * GEV)
 
+        meff += (met.met() * GEV)
         hists[ntops]['meff'].Fill(meff)
+
+        if nleptons > 0:
+            mt = sqrt(2*leading[0]*(met.met()*GEV)*(1 - cos(leading[1] - met.phi())))
+            hists[ntops]['mt'].Fill(mt)
+
 
 except RuntimeError:
     pass
