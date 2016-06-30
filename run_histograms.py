@@ -43,7 +43,8 @@ for i in [1,2,3]:
         'lepton_phi': ROOT.TH1D('h_{}_lepton_phi'.format(i), '', 100, 0, 5),
         'lepton_n': ROOT.TH1D('h_{}_lepton_n'.format(i), '', 20, 0, 20),
         'MET_phi': ROOT.TH1D('h_{}_MET_phi'.format(i), '', 100, 0, 5),
-        'MET_mag': ROOT.TH1D('h_{}_MET_mag'.format(i), '', 200, 0, 2000)
+        'MET_mag': ROOT.TH1D('h_{}_MET_mag'.format(i), '', 200, 0, 2000),
+        'meff': ROOT.TH1D('h_{}_meff'.format(i), '', 500, 0, 5000)
     }
 
 
@@ -60,6 +61,8 @@ try:
         ntops = len([top for top in event.TruthTop if top.auxdata('int')('motherID') == 1000021])
         event_dict[ntops] += 1
 
+        meff = 0
+
         # small-R jets and b-jets
         njets = 0
         nbjets = 0
@@ -68,6 +71,7 @@ try:
                 hists[ntops]['jet_pt'].Fill(jet.pt() * GEV)
                 hists[ntops]['jet_eta'].Fill(abs(jet.eta()))
                 hists[ntops]['jet_phi'].Fill(jet.phi())
+                meff += (jet.pt() * GEV)
                 njets += 1
                 if abs(jet.eta()) < 2.5 and abs(jet.auxdata('int')('PartonTruthLabelID')) == 5:
                     hists[ntops]['bjet_pt'].Fill(jet.pt() * GEV)
@@ -104,6 +108,7 @@ try:
                 hists[ntops]['lepton_pt'].Fill(lepton.pt() * GEV)
                 hists[ntops]['lepton_eta'].Fill(abs(lepton.eta()))
                 hists[ntops]['lepton_phi'].Fill(lepton.phi())
+                meff += (lepton.pt() * GEV)
                 nleptons += 1
         hists[ntops]['lepton_n'].Fill(nleptons)
 
@@ -111,6 +116,9 @@ try:
         met = event.MET_Truth['NonInt']
         hists[ntops]['MET_phi'].Fill(met.phi())
         hists[ntops]['MET_mag'].Fill(met.met() * GEV)
+        meff += (met.met() * GEV)
+
+        hists[ntops]['meff'].Fill(meff)
 
 except RuntimeError:
     pass
