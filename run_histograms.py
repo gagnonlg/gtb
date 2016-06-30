@@ -48,6 +48,8 @@ for i in [1,2,3]:
         'meff': ROOT.TH1D('h_{}_meff'.format(i), '', 500, 0, 5000),
         'mt': ROOT.TH1D('h_{}_mt'.format(i), '', 200, 0, 2000),
         'mtb': ROOT.TH1D('h_{}_mtb'.format(i), '', 200, 0, 2000),
+        'dphimin4j': ROOT.TH1D('h_{}_dphimin4j'.format(i), '', 100, 0, 5),
+        'mjsum': ROOT.TH1D('h_{}_mjsum'.format(i), '', 500, 0, 5000),
     }
 
 
@@ -70,6 +72,7 @@ try:
         # small-R jets and b-jets
         njets = 0
         nbjets = 0
+        jets = []
         bjets = []
         for jet in event.AntiKt4TruthJets:
             if (jet.pt() * GEV) > 20 and abs(jet.eta()) < 2.8:
@@ -78,6 +81,7 @@ try:
                 hists[ntops]['jet_phi'].Fill(jet.phi())
                 meff += (jet.pt() * GEV)
                 njets += 1
+                jets.append((jet.pt()*GEV, jet.phi()))
                 if abs(jet.eta()) < 2.5 and abs(jet.auxdata('int')('PartonTruthLabelID')) == 5:
                     hists[ntops]['bjet_pt'].Fill(jet.pt() * GEV)
                     hists[ntops]['bjet_eta'].Fill(abs(jet.eta()))
@@ -91,7 +95,12 @@ try:
         # large-R jets
         nlargejets = 0
         nlargejets_m100 = 0
+        mjsum = 0
+        nmj = 0
         for jet in event.TrimmedAntiKt10TruthJets:
+            if (jet.pt()*GEV) > 100 and abs(jet.eta()) < 2.0 and nmj < 4:
+                mjsum += (jet.m() * GEV)
+                nmj += 1
             if (jet.pt()*GEV) > 300 and abs(jet.eta()) < 2.0:
                 hists[ntops]['largejet_pt'].Fill(jet.pt() * GEV)
                 hists[ntops]['largejet_eta'].Fill(abs(jet.eta()))
@@ -103,6 +112,7 @@ try:
 
         hists[ntops]['largejet_n'].Fill(nlargejets)
         hists[ntops]['largejet_n_m100'].Fill(nlargejets_m100)
+        hists[ntops]['mjsum'].Fill(mjsum)
 
         # leptons
         nleptons = 0
@@ -134,11 +144,16 @@ try:
             hists[ntops]['mt'].Fill(mt)
 
         mtblist = []
-        for (pt,phi) in sorted(bjets,reverse=True)[0:3]:
+        for (pt,phi) in sorted(bjets,reverse=True)[:3]:
             mtblist.append(sqrt(2*pt*(met.met()*GEV)*(1 - cos(phi - met.phi()))))
         if len(mtblist) == 3:
             hists[ntops]['mtb'].Fill(min(mtblist))
 
+        dphilist = []
+        for (_,phi) in sorted(jets, reverse=True)[:4]:
+            dphilist.append(abs(phi - met.phi()))
+        if len(dphilist) == 4:
+            hists[ntops]['dphimin4j'].Fill(min(dphilist))
 
 except RuntimeError:
     pass
