@@ -1,7 +1,7 @@
 from __future__ import print_function
 import argparse
 import ROOT
-import os.path
+import os
 import itertools as it
 from math import cos,sqrt
 
@@ -16,7 +16,7 @@ p.add_argument('tb_file')
 p.add_argument('output')
 args = p.parse_args()
 
-ROOT.xAOD.Init().ignore()
+assert(ROOT.xAOD.Init().isSuccess())
 
 tb_file = ROOT.TFile(args.tb_file)
 tb_tree = ROOT.xAOD.MakeTransientTree(tb_file)
@@ -56,18 +56,24 @@ for i in [1,2,3]:
 
 event_dict = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
 
-met_min=float('inf')
-met_max=-met_min
-
+# Here we embed the whole loop in a try-except block, because for some
+# unknown reason it will attempt to load some entries in excess
 try:
     for i,event in enumerate(tb_tree):
         if i % 100 == 0:
             print('event {}/{}'.format(i,tb_tree.GetEntries()))
-        ntops = len([top for top in event.TruthTop if top.auxdata('int')('motherID') == 1000021])
+
+        # Classify the events by the number of tops TRUTH3 doesn't
+        # keep the truth "chain" so we cannot separate
+        # g->tt/g->bb from g->tb/g->tb
+        ntops = len([top for top in event.TruthTop
+                     if top.auxdata('int')('motherID') == 1000021])
         event_dict[ntops] += 1
 
+        # initialize variables to compute
         meff = 0
         mt = 0
+
 
         # small-R jets and b-jets
         njets = 0
@@ -82,7 +88,8 @@ try:
                 meff += (jet.pt() * GEV)
                 njets += 1
                 jets.append((jet.pt()*GEV, jet.phi()))
-                if abs(jet.eta()) < 2.5 and abs(jet.auxdata('int')('PartonTruthLabelID')) == 5:
+                if abs(jet.eta()) < 2.5 and \
+                   abs(jet.auxdata('int')('PartonTruthLabelID')) == 5:
                     hists[ntops]['bjet_pt'].Fill(jet.pt() * GEV)
                     hists[ntops]['bjet_eta'].Fill(abs(jet.eta()))
                     hists[ntops]['bjet_phi'].Fill(jet.phi())
@@ -140,12 +147,14 @@ try:
         hists[ntops]['meff'].Fill(meff)
 
         if nleptons > 0:
-            mt = sqrt(2*leading[0]*(met.met()*GEV)*(1 - cos(leading[1] - met.phi())))
+            mt = sqrt(2*leading[0]*(met.met()*GEV)*
+                      (1 - cos(leading[1] - met.phi())))
             hists[ntops]['mt'].Fill(mt)
 
         mtblist = []
         for (pt,phi) in sorted(bjets,reverse=True)[:3]:
-            mtblist.append(sqrt(2*pt*(met.met()*GEV)*(1 - cos(phi - met.phi()))))
+            mtblist.append(sqrt(2*pt*(met.met()*GEV)*
+                                (1 - cos(phi - met.phi()))))
         if len(mtblist) == 3:
             hists[ntops]['mtb'].Fill(min(mtblist))
 
@@ -156,14 +165,30 @@ try:
             hists[ntops]['dphimin4j'].Fill(min(dphilist))
 
 except RuntimeError:
+    # Just ignore the error as we've used all events
     pass
 
-print(met_max)
-print(met_min)
 
-total = event_dict[0] + event_dict[1] + event_dict[2] + event_dict[3] + event_dict[4]
+# check the yield
+total = event_dict[0] + \
+        event_dict[1] + \
+        event_dict[2] + \
+        event_dict[3] + \
+        event_dict[4]
+
 print('total: {}'.format(total))
-for i in range(5):
-    print('{}: {} ({}%)'.format(i, event_dict[i], 100 * event_dict[i] / float(total)))
 
+for i in range(5):
+    print('{}: {} ({}%)'.format(
+        i,
+        event_dict[i],
+        100 * event_dict[i] / float(total)
+    ))
+
+
+# finally, write the outfile
 outfile.Write()
+
+# For some reason, even though everything is fine, ROOT will now
+# segfault. To avoid this, we call os._exit directly
+os._exit(0)
