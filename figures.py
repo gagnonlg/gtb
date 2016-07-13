@@ -201,7 +201,12 @@ graph(
     xlims=(0,6)
 )
 
-# TODO MET phi
+graph(
+    variable='MET_phi',
+    title=';#phi(E_{T}^{miss}); Fraction of events',
+    xlims=(0,4),
+    rebin=10
+)
 
 graph(
     variable='MET_mag',
@@ -211,8 +216,43 @@ graph(
     ylims=(0.001,1)
 )
 
+graph(
+    variable='meff',
+    title=';m_{eff};Fraction of events',
+    rebin=10,
+    log=True,
+    ylims=(0.001,0.5)
+)
 
-# graph(
-#     variable=,
-#     title=,
-# )
+graph(
+    variable='mt',
+    title=';m_T;Fraction of events',
+    rebin=10,
+    log=True,
+    ylims=(0.001,1)
+)
+
+graph(
+    variable='mtb',
+    title=';m_T;Fraction of events',
+    rebin=10,
+    log=True,
+    ylims=(0.001,1)
+)
+
+graph(
+    variable='dphimin4j',
+    title=';#Delta#phi_{min}^{4j},;Fraction of events',
+    rebin=10,
+    log=True,
+    ylims=(0.001,1)
+)
+
+graph(
+    variable='mjsum',
+    title=';m_{J}^{#Sigma,4};Fraction of events',
+    rebin=10,
+    log=True,
+    ylims=(0.001,1),
+    xlims=(0,1500)
+)
