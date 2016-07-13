@@ -23,7 +23,7 @@ tb_tree = ROOT.xAOD.MakeTransientTree(tb_file)
 outfile = ROOT.TFile(args.output, 'RECREATE')
 
 hists = {1: None, 2: None, 3: None}
-for i in [1,2,3]:
+for i in ['1', '2a', '2b', '3']:
     hists[i] = {
         'jet_pt': ROOT.TH1D('h_{}_jet_pt'.format(i), '', 200, 0,2000),
         'jet_eta': ROOT.TH1D('h_{}_jet_eta'.format(i), '', 100, 0, 5),
@@ -54,7 +54,7 @@ for i in [1,2,3]:
 
 
 
-event_dict = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
+event_dict = {'0': 0, '1': 0, '2a': 0, '2b': 0, '3': 0, '4': 0}
 
 # Here we embed the whole loop in a try-except block, because for some
 # unknown reason it will attempt to load some entries in excess
@@ -66,8 +66,14 @@ try:
         # Classify the events by the number of tops TRUTH3 doesn't
         # keep the truth "chain" so we cannot separate
         # g->tt/g->bb from g->tb/g->tb
-        ntops = len([top for top in event.TruthTop
-                     if top.auxdata('int')('motherID') == 1000021])
+        ntops = str(len([top for top in event.TruthTop
+                         if top.auxdata('int')('motherID') == 1000021]))
+        if ntops == '2':
+            if len([p for p in event.TruthBSM if p.absPdgId() == 1000024]) > 0:
+                ntops += 'a'
+            else:
+                ntops += 'b'
+
         event_dict[ntops] += 1
 
         # initialize variables to compute
@@ -170,15 +176,16 @@ except RuntimeError:
 
 
 # check the yield
-total = event_dict[0] + \
-        event_dict[1] + \
-        event_dict[2] + \
-        event_dict[3] + \
-        event_dict[4]
+total = event_dict['0'] + \
+        event_dict['1'] + \
+        event_dict['2a'] + \
+        event_dict['2b'] + \
+        event_dict['3'] + \
+        event_dict['4']
 
 print('total: {}'.format(total))
 
-for i in range(5):
+for i in ['0','1','2a','2b','3','4']:
     print('{}: {} ({}%)'.format(
         i,
         event_dict[i],
