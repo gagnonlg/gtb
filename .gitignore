@@ -1,0 +1,6 @@
+*.pdf
+RootCoreBin/
+.RootCoreBin
+*.root
+data/
+rcSetup.*
