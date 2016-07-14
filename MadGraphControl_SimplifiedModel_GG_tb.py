@@ -38,23 +38,24 @@ if njets>0:
     genSeq.Pythia8.Commands += ["Merging:Process = pp>{go,1000021}{go,1000021}"]
 
 # Filter-out pure Gtt and Gbb events
-from GeneratorFilters.GeneratorFiltersConf import ParentChildFilter
+# from GeneratorFilters.GeneratorFiltersConf import ParentChildFilter
 
-# look for gluino -> bottom + X vertices
-filtSeq += ParentChildFilter("g_b_filter")
-filtSeq.g_b_filter.PDGParent = [1000021] # gluino
-filtSeq.g_b_filter.PDGChild = [5] # bottom quark
+# # look for gluino -> bottom + X vertices
+# filtSeq += ParentChildFilter("g_b_filter")
+# filtSeq.g_b_filter.PDGParent = [1000021] # gluino
+# filtSeq.g_b_filter.PDGChild = [5] # bottom quark
 
-# look for gluino -> top + X vertices
-filtSeq += ParentChildFilter("g_t_filter")
-filtSeq.g_t_filter.PDGParent = [1000021] # gluino
-filtSeq.g_t_filter.PDGChild = [6] # top quark
+# # look for gluino -> top + X vertices
+# filtSeq += ParentChildFilter("g_t_filter")
+# filtSeq.g_t_filter.PDGParent = [1000021] # gluino
+# filtSeq.g_t_filter.PDGChild = [6] # top quark
 
-# require both filters to pass
-filtSeq.Expression = "g_b_filter and g_t_filter"
+# # require both filters to pass
+# filtSeq.Expression = "g_b_filter and g_t_filter"
 
 # filter efficiency is 7/9 + small margin for other inefficiencies
-evt_multiplier = (9.0/7.0) * 1.2
+#evt_multiplier = (9.0/7.0) * 1.2
+evt_multiplier = 1.2
 
 include('MC15JobOptions/MadGraphControl_SimplifiedModelPostInclude.py')
 
