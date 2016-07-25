@@ -23,7 +23,7 @@ tb_tree = ROOT.xAOD.MakeTransientTree(tb_file)
 outfile = ROOT.TFile(args.output, 'RECREATE')
 
 hists = {1: None, 2: None, 3: None}
-for i in ['1', '2a', '2b', '3']:
+for i in ['0', '1', '2a', '2b', '3', '4']:
     hists[i] = {
         'jet_pt': ROOT.TH1D('h_{}_jet_pt'.format(i), '', 200, 0,2000),
         'jet_eta': ROOT.TH1D('h_{}_jet_eta'.format(i), '', 100, 0, 5),
