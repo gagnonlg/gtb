@@ -54,8 +54,8 @@ if njets>0:
 # filtSeq.Expression = "g_b_filter and g_t_filter"
 
 # filter efficiency is 7/9 + small margin for other inefficiencies
-#evt_multiplier = (9.0/7.0) * 1.2
-evt_multiplier = 1.2
+#evt_multiplier = (9.0/7.0) * 1.5
+evt_multiplier = 1.5
 
 include('MC15JobOptions/MadGraphControl_SimplifiedModelPostInclude.py')
 
