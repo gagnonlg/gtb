@@ -122,8 +122,12 @@ def calc_branching(f_tt, f_bb):
         f_tt * f_tt
     ])
 
-def sr_yield(f_tt, f_bb, yields):
+def sr_yield(f_tt, f_bb, yields, include_1_3=True):
     br = calc_branching(f_tt, f_bb)
+    if not include_1_3:
+        br[1] = 0
+        br[3] = 0
+        br *= np.sum(br)
     assert(np.isclose(np.sum(br),1))
     return np.sum(br * yields)
 
@@ -144,6 +148,14 @@ def calc_triangle(yields, b):
 
     return res
 
+def calc_line(yields, b):
+    """ ggttbb """
+    f_bb = np.linspace(0, 1, 100)
+    res = np.zeros_like(f_bb)
+    for i, f in enumerate(f_bb):
+        res[i] = sr_yield(f, 1 - f, yields, include_1_3=False)
+    return res
+
 def save_triangle(yields, b, sr_name):
     grid = calc_triangle(yields, b)
     np.savetxt('triangle_{}.gz'.format(sr_name), grid)
@@ -152,4 +164,10 @@ for sr in ['gbb_A', 'gbb_B', 'gtt_0l_A', 'gtt_0l_B', 'gtt_1l_A', 'gtt_1l_B', 'gt
     yields_signal = yield_dict[sr]
     #print "=> {}".format(sr)
     yield_bkgnd = bkgnd_dict[sr]
-    save_triangle(yields_signal, yield_bkgnd, sr)
+
+    triangle = calc_triangle(yields_signal, yield_bkgnd)
+    line = calc_line(yields_signal, yield_bkgnd)
+
+    np.savetxt('{}_triangle.gz'.format(sr), triangle)
+    np.savetxt('{}_line.gz'.format(sr), line)
+
