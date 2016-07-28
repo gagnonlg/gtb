@@ -1,9 +1,10 @@
 set -u
 set -e
-path=$(readlink -f $1)
+#path=$(readlink -f $1)
+path=$1
 jobname=derivation_$(basename $path .pool.root)_$(date --iso=seconds)
 
-cat <<EOF | qsub -N $jobname -d /lcg/storage15/atlas/gagnon/work -joe -l nice=0
+cat <<EOF | qsub -N $jobname -d /lcg/storage15/atlas/gagnon/work -joe -l nice=0 -W depend=afterok:3444
 mkdir $jobname
 cd $jobname
 . /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase/user/atlasLocalSetup.sh
