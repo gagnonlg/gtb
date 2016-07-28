@@ -4,3 +4,15 @@ RootCoreBin/
 *.root
 data/
 rcSetup.*
+*.png
+*.gz
+*.aux
+*.toc
+*.log
+*.nav
+*.snm
+*.pyc
+venv/
+*.out
+*.db
+*.bak.py

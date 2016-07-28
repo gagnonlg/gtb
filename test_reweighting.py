@@ -1,116 +1,203 @@
+import argparse
+import itertools as it
+import logging
+import os
 import sqlite3
 
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import ROOT
 
-""" parameters """
-XSEC = 1000.0 * 0.00276133
-LUMI = 10.7
-UNCERT = 0.3
+import signal_regions
 
-""" database """
-db = sqlite3.connect('gtb.sql')
+LOGGER = logging.getLogger('test_reweighting')
 
-""" background dict """
-bkgnd_dict = {
-    'gbb_A' : 1.2,
-    'gbb_B' : 7.0,
-    'gtt_0l_A' : 0.8,
-    'gtt_0l_B' : 4.6,
-    'gtt_1l_A' : 0.68,
-    'gtt_1l_B' : 0.7,
-    'gtt_1l_C' : 3.3,
-}
+UNCERT=0.3
 
-""" sql WHERE clauses for signal regions """
+significance = ROOT.RooStats.NumberCountingUtils.BinomialExpZ
 
-gbb_common = '(nlepton == 0 AND dphimin4j > 0.4)'
-gbb_A = ' AND '.join([
-    gbb_common,
-    'njet_70 >= 4',
-    'nb >= 3',
-    'met > 450',
-    'meff4j > 1900',
-])
-gbb_B = ' AND '.join([
-    gbb_common,
-    'njet_30 >= 4',
-    'nb >= 4',
-    'met > 300',
-    'meff4j > 1000'
-])
+def get_args():
+    args = argparse.ArgumentParser()
+    args.add_argument('--input', required=True)
+    args.add_argument('--xsec', required=True, type=float)
+    args.add_argument('--output', required=True)
+    args.add_argument('--loglevel', default='INFO')
+    return args.parse_args()
 
-gtt_0l_common = ' AND '.join([
-    'njet_30 >= 8',
-    'nb >= 3',
-    'nlepton == 0',
-    'dphimin4j > 0.4',
-    'mtb > 80'
-])
-gtt_0l_A = ' AND '.join([
-    gtt_0l_common,
-    'met > 400',
-    'meff > 2000',
-    'mjsum > 200'
-])
-gtt_0l_B = ' AND '.join([
-    gtt_0l_common,
-    'met > 400',
-    'meff > 1500',
-    'mjsum > 150'
-])
 
-gtt_1l_common = '(nlepton >= 1 AND njet_30 >= 6)'
-gtt_1l_A = ' AND '.join([
-    gtt_1l_common,
-    'nb >= 3',
-    'mt > 200',
-    'mtb > 120',
-    'met > 200',
-    'meff > 2000',
-    'mjsum > 200'
-])
-gtt_1l_B = ' AND '.join([
-    gtt_1l_common,
-    'nb >= 3',
-    'mt > 200',
-    'mtb > 120',
-    'met > 350',
-    'meff > 1500',
-    'mjsum > 150'
-])
-gtt_1l_C = ' AND '.join([
-    gtt_1l_common,
-    'nb >= 4',
-    'mt > 150',
-    'mtb > 80',
-    'met > 200',
-    'meff > 500'
-])
+def get_yields_dict(db, xsec):
+    yield_dict = {}
+    for name in signal_regions.names:
+        LOGGER.debug('calculating yields for region %s ', name)
+        yield_dict[name] = calc_yields(
+            db,
+            sr=signal_regions.signal_regions[name],
+            xsec=(1000.0 * xsec),
+            lumi=signal_regions.luminosity_for_background
+        )
 
-""" calc yields """
+    return yield_dict
 
-def calc_yield(sr):
-    d = np.zeros(5)
+def calc_yields(db, sr, xsec, lumi):
+
+    data = np.zeros(5)
     for i in range(5):
-        where = 'ntop = {} AND {}'.format(i,sr)
-        tot, = db.execute('SELECT count(*) FROM dataset WHERE ntop = {}'.format(i))
-        cnt, = db.execute('SELECT count(*) FROM dataset WHERE {}'.format(where))
-        d[i] = XSEC * LUMI * float(cnt[0]) / float(tot[0])
-        #print "=> SR:{} ntop:{} eff:{} nevt:{}".format(sr,i,float(cnt[0]) / float(tot[0]),d[i])
-    return d
+        LOGGER.debug('calculating efficiency for %d top events', i)
+        where = 'ntop = {}'.format(i)
+        query = 'SELECT count(*) FROM dataset WHERE {}'.format(where)
+        LOGGER.debug('calculating total number of %d top events', i)
+        LOGGER.debug('query: %s', query)
+        tot, = db.execute(query)
+        tot = float(tot[0])
+        LOGGER.debug('query returned %d', tot)
 
-yield_dict = {
-    'gbb_A' : calc_yield(gbb_A),
-    'gbb_B' : calc_yield(gbb_B),
-    'gtt_0l_A' : calc_yield(gtt_0l_A),
-    'gtt_0l_B' : calc_yield(gtt_0l_B),
-    'gtt_1l_A' : calc_yield(gtt_1l_A),
-    'gtt_1l_B' : calc_yield(gtt_1l_B),
-    'gtt_1l_C' : calc_yield(gtt_1l_C),
-}
+        query += ' AND {}'.format(sr)
+        LOGGER.debug('calculating number of events in SR for %d top events', i)
+        LOGGER.debug('query: %s', query)
+        passd, = db.execute(query)
+        passd = float(passd[0])
+        LOGGER.debug('query returned %d', passd)
 
-""" Make triangle plots """
+        eff = passd / tot
+        assert eff <= 1, 'efficiency > 1!'
+        LOGGER.debug('efficiency: %f', eff)
+
+        eff *= xsec
+        eff *= lumi
+        LOGGER.debug('scaling to xsec = %f', xsec)
+        LOGGER.debug('scaling to luminosity = %f', lumi)
+        LOGGER.debug('total number of events in SR: %f', eff)
+
+        data[i] = eff
+
+    return data
+
+def main():
+
+    args = get_args()
+
+    logging.basicConfig(
+        level=args.loglevel,
+        format='[%(name)s] %(levelname)s %(message)s'
+    )
+
+    LOGGER.debug('input: %s', args.input)
+    LOGGER.debug('xsec: %f', args.xsec)
+    LOGGER.debug('output: %s', args.output)
+
+    if not os.path.exists(args.input):
+        LOGGER.error('database "%s" does not exists', args.input)
+        return 1
+
+    db = sqlite3.connect(args.input)
+
+    yields_dict = get_yields_dict(db, args.xsec)
+
+    bkgnd_dict = signal_regions.backgrounds
+    for k,v in bkgnd_dict.iteritems():
+        LOGGER.debug('background yields at %f fb^-1:', signal_regions.luminosity_for_background)
+        LOGGER.debug('%s: %f', k, v)
+
+    for sr in signal_regions.names:
+        LOGGER.info('calculating line in SR %s', sr)
+        yields = yields_dict[sr]
+        yield_bkgnd = bkgnd_dict[sr]
+        line = calc_line(yields, yield_bkgnd)
+        graph_line(line, sr, args.output)
+
+        LOGGER.info('calculating triangle in SR %s', sr)
+        triangle = calc_triangle(yields, yield_bkgnd)
+        graph_triangle(triangle, sr, args.output)
+
+def graph_line(line, sr, prefix):
+    LOGGER.debug('plotting line for SR %s', sr)
+    x,y = line
+    plt.figure(num=None, figsize=(8, 6), dpi=200, facecolor='w', edgecolor='k')
+    plt.plot(x,y)
+    plt.xlabel('f_tt')
+    plt.ylabel('significance')
+    plt.title(sr)
+    path = '{}_line_{}.png'.format(prefix, sr)
+    plt.savefig(path)
+    LOGGER.info('saved line in file %s', path)
+
+    data = np.zeros((x.shape[0], 2))
+    data[:,0] = x
+    data[:,1] = y
+
+    np.savetxt(path.replace('png','gz'), data)
+    LOGGER.info('data saved in file %s', path.replace('png','gz'))
+
+    plt.close()
+
+def graph_triangle(triangle, sr, prefix):
+    masked_data = np.ma.masked_equal(triangle.T, 0)
+    plt.figure(num=None, figsize=(8, 6), dpi=200, facecolor='w', edgecolor='k')
+    plt.imshow(masked_data, cmap='Reds')
+    plt.xlabel('f_tt')
+    plt.ylabel('f_bb')
+    plt.axis([0,100,0,100])
+    cb = plt.colorbar()
+    cb.set_label('significance')
+
+    plt.text(55, 95, sr)
+    m_g = prefix.split('_')[0]
+    m_l = prefix.split('_')[2]
+    plt.text(55, 90, "m_g = {}, m_l = {}".format(m_g,m_l))
+
+    path = '{}_triangle_{}.png'.format(prefix, sr)
+    plt.savefig(path)
+    LOGGER.info('saved triangle in file %s', path)
+
+
+def calc_line(signals, bkgnd):
+    f_tt = np.linspace(0, 1, 100)
+    results = np.zeros_like(f_tt)
+    for i, f in enumerate(f_tt):
+        s = sr_yield(f, 1 - f, signals, include_1_3=False)
+        results[i] = significance(s, bkgnd, UNCERT)
+        LOGGER.debug('bkgnd: %f', bkgnd)
+        LOGGER.debug('significane: %f', results[i])
+    return f_tt, results
+
+def calc_triangle(signals, bkgnd):
+    n = 100
+    f_tt = np.linspace(0, 1, n)
+    f_bb = np.linspace(0, 1, n)
+    results = np.zeros((n,n))
+    for i in range(n):
+        for j in range(n):
+            tt = f_tt[i]
+            bb = f_bb[j]
+            if tt + bb <= 1:
+                s = sr_yield(tt, bb, signals, include_1_3=True)
+                results[i,j] = significance(s, bkgnd, UNCERT)
+    return results
+
+def sr_yield(f_tt, f_bb, yields, include_1_3=False):
+    LOGGER.debug('calculating total yield for f_tt=%f and f_bb=%f', f_tt, f_bb)
+    branching = calc_branching(f_tt, f_bb)
+    LOGGER.debug('branching ratios: %s', str(branching))
+
+    if not include_1_3:
+        LOGGER.debug('Using the 2 branching ratios scenario')
+        LOGGER.debug('Rescaling the branching ratios')
+        branching[1] = 0
+        branching[3] = 0
+        branching /= np.sum(branching)
+        LOGGER.debug('rescaled branching ratios: %s', str(branching))
+
+    assert(np.isclose(1, np.sum(branching)))
+    LOGGER.debug('yields, unscaled: %s', str(yields))
+    assert(yields.shape == branching.shape)
+    yields_scaled = yields * branching
+    LOGGER.debug('yields: %s', str(yields_scaled))
+    total = np.sum(yields_scaled)
+    LOGGER.debug('total yield: %f', total)
+    return total
+
 
 def calc_branching(f_tt, f_bb):
     f_tb = 1 - f_tt - f_bb
@@ -122,52 +209,8 @@ def calc_branching(f_tt, f_bb):
         f_tt * f_tt
     ])
 
-def sr_yield(f_tt, f_bb, yields, include_1_3=True):
-    br = calc_branching(f_tt, f_bb)
-    if not include_1_3:
-        br[1] = 0
-        br[3] = 0
-        br *= np.sum(br)
-    assert(np.isclose(np.sum(br),1))
-    return np.sum(br * yields)
 
-def calc_triangle(yields, b):
-    f_bb = np.linspace(0,1,100)
-    f_tt = np.linspace(0,1,100)
 
-    res = np.zeros((f_bb.shape[0],f_tt.shape[0]))
-    for i in range(f_bb.shape[0]):
-        for j in range(f_tt.shape[0]):
-            if f_bb[i]+f_tt[j] > 1:
-                res[i,j] = 0
-            else:
-                s = sr_yield(f_tt[i], f_bb[i], yields)
-                # if f_bb[i] == 1:
-                #     #print " -> (Gbb) s={}, b={}".format(s,b)
-                res[i,j] = ROOT.RooStats.NumberCountingUtils.BinomialExpZ(s,b,UNCERT)
-
-    return res
-
-def calc_line(yields, b):
-    """ ggttbb """
-    f_bb = np.linspace(0, 1, 100)
-    res = np.zeros_like(f_bb)
-    for i, f in enumerate(f_bb):
-        res[i] = sr_yield(f, 1 - f, yields, include_1_3=False)
-    return res
-
-def save_triangle(yields, b, sr_name):
-    grid = calc_triangle(yields, b)
-    np.savetxt('triangle_{}.gz'.format(sr_name), grid)
-
-for sr in ['gbb_A', 'gbb_B', 'gtt_0l_A', 'gtt_0l_B', 'gtt_1l_A', 'gtt_1l_B', 'gtt_1l_C']:
-    yields_signal = yield_dict[sr]
-    #print "=> {}".format(sr)
-    yield_bkgnd = bkgnd_dict[sr]
-
-    triangle = calc_triangle(yields_signal, yield_bkgnd)
-    line = calc_line(yields_signal, yield_bkgnd)
-
-    np.savetxt('{}_triangle.gz'.format(sr), triangle)
-    np.savetxt('{}_line.gz'.format(sr), line)
+if __name__ == '__main__':
+    exit(main())
 
