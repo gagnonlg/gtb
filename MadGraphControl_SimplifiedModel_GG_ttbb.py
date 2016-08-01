@@ -37,14 +37,15 @@ if njets>0:
     genSeq.Pythia8.Commands += ["Merging:Process = pp>{go,1000021}{go,1000021}"]
 
 # Filter-out pure Gtt and Gbb events
-from GeneratorFilters.GeneratorFiltersConf import ParentTwoChildrenFilter
+# from GeneratorFilters.GeneratorFiltersConf import ParentTwoChildrenFilter
 
-filtSeq += ParentTwoChildrenFilter('tt_bb_filter')
-filtSeq.tt_bb_filter.PDGParent = [1000021] # gluino
-filtSeq.tt_bb_filter.PDGChild = [5,6] # bottom, top
+# filtSeq += ParentTwoChildrenFilter('tt_bb_filter')
+# filtSeq.tt_bb_filter.PDGParent = [1000021] # gluino
+# filtSeq.tt_bb_filter.PDGChild = [5,6] # bottom, top
 
 # filter efficiency is 50% + small margin for other inefficiencies
-evt_multiplier = 2.2
+# evt_multiplier = 2.2
+evt_multiplier = 1.5
 
 include('MC15JobOptions/MadGraphControl_SimplifiedModelPostInclude.py')
 
