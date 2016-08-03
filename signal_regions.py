@@ -1,3 +1,9 @@
+import logging
+
+import numpy as np
+
+LOGGER = logging.getLogger('signal_regions')
+
 luminosity_for_background = 10.7
 signal_regions = {}
 
@@ -87,3 +93,55 @@ names = [
     'gtt_1l_B',
     'gtt_1l_C',
 ]
+
+def get_yields_dict(db, xsec):
+    yield_dict = {}
+    for name in names:
+        LOGGER.debug('calculating yields for region %s ', name)
+        yield_dict[name] = calc_yields(
+            db,
+            sr=signal_regions[name],
+            xsec=(1000.0 * xsec),
+            lumi=luminosity_for_background
+        )
+
+    return yield_dict
+
+def calc_yields(db, sr, xsec, lumi):
+
+    data = np.zeros((5,2))
+    for i in range(5):
+        LOGGER.debug('calculating efficiency for %d top events', i)
+        where = 'ntop = {}'.format(i)
+        query = 'SELECT count(*) FROM dataset WHERE {}'.format(where)
+        LOGGER.debug('calculating total number of %d top events', i)
+        LOGGER.debug('query: %s', query)
+        tot, = db.execute(query)
+        tot = float(tot[0])
+        LOGGER.debug('query returned %d', tot)
+
+        query += ' AND {}'.format(sr)
+        LOGGER.debug('calculating number of events in SR for %d top events', i)
+        LOGGER.debug('query: %s', query)
+        passd, = db.execute(query)
+        passd = float(passd[0])
+        LOGGER.debug('query returned %d', passd)
+
+        eff = passd / tot if tot > 0 else 0
+        assert eff <= 1, 'efficiency > 1!'
+        u_eff = np.sqrt(eff*(1 - eff)/tot) if tot > 0 else 0
+        LOGGER.debug('efficiency: %f +- %f', eff, u_eff)
+
+
+        eff *= xsec
+        eff *= lumi
+        u_eff *= xsec
+        u_eff *= lumi
+        LOGGER.debug('scaling to xsec = %f', xsec)
+        LOGGER.debug('scaling to luminosity = %f', lumi)
+        LOGGER.debug('total number of events in SR: %f +- %f', eff, u_eff)
+
+        data[i,0] = eff
+        data[i,1] = u_eff
+
+    return data
