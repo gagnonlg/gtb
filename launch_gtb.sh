@@ -4,8 +4,7 @@
 mkdir ${PBS_JOBID}_${PBS_JOBNAME}
 cd ${PBS_JOBID}_${PBS_JOBNAME}
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-git clone $SCRIPT_DIR .
+git clone $REPO .
 
 if [ "$NAME" = "2top" ]; then
     maxEvents=10000
