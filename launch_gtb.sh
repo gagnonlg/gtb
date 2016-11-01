@@ -1,5 +1,5 @@
 . /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase/user/atlasLocalSetup.sh
-. $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh 'asetup AtlasProduction,19.2.5.5'
+. $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh 'asetup AtlasProduction,19.2.5.15'
 
 mkdir ${PBS_JOBID}_${PBS_JOBNAME}
 cd ${PBS_JOBID}_${PBS_JOBNAME}
