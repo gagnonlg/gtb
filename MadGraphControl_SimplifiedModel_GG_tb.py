@@ -3,13 +3,14 @@ include ( 'MC15JobOptions/MadGraphControl_SimplifiedModelPreInclude.py' )
 
 fields = runArgs.jobConfig[0].replace(".py","").split("_")
 # 0                   1        2  3  4        5        6
-# MC15.<dsid>.MGPy8EG_A14N23LO_GG_tb_<gluino>_<squark>_<neutralino>.py
+# MC15.<dsid>.MGPy8EG_A14N23LO_GG_tb_<gluino>_<squark>_<neutralino>_<final state>.py
 
 gentype = fields[2]
 decaytype = fields[3]
 gluino_mass = float(fields[4])
 squark_mass = float(fields[5])
 neutralino_mass = float(fields[6])
+final_state = fields[7]
 
 masses['1000021'] = gluino_mass
 masses['1000005'] = squark_mass # sbottom
@@ -24,38 +25,61 @@ add process p p > go go j j $ susysq susysq~ @3
 '''
 njets = 2
 
-evgenLog.info('GGtb grid point {}'.format(runArgs.runNumber))
+evgenLog.info('Gtb grid point {}'.format(runArgs.runNumber))
 evgenLog.info('gluino mass: {}'.format(gluino_mass))
 evgenLog.info('squark mass: {}'.format(squark_mass))
 evgenLog.info('neutralino mass: {}'.format(neutralino_mass))
 
 evgenConfig.contact  = ["louis.guillaume.gagnon@cern.ch"]
 evgenConfig.keywords += ['simplifiedModel', 'gluino', 'neutralino', 'SUSY', 'boosted', 'top', 'bottom']
-evgenConfig.description = 'gluino pair production and decay to tops and/or bottoms and LSP via off-shell stops and/or sbottoms'
+evgenConfig.description = 'gluino pair production and decay to tops and bottoms + LSP via off-shell stops and/or sbottoms'
 
 
 if njets>0:
     genSeq.Pythia8.Commands += ["Merging:Process = pp>{go,1000021}{go,1000021}"]
 
-# Filter-out pure Gtt and Gbb events
-# from GeneratorFilters.GeneratorFiltersConf import ParentChildFilter
+# Setup the filters
+from GeneratorFilters.GeneratorFiltersConf import ParticleFilter
 
-# # look for gluino -> bottom + X vertices
-# filtSeq += ParentChildFilter("g_b_filter")
-# filtSeq.g_b_filter.PDGParent = [1000021] # gluino
-# filtSeq.g_b_filter.PDGChild = [5] # bottom quark
+if final_state == '2top':
+    # Keep only 2-top final states
+    filtSeq += ParticleFilter("filter_2_top")
+    filtSeq.filter_2_top.PDGID = 6 # top quark
+    filtSeq.filter_2_top.MinParts = 2
+    filtSeq.filter_2_top.Exclusive = True # require exactly 2 tops
+    filtSeq.filter_2_top.StatusReq = -1
+    filtSeq.Expression = "filter_2_top"
 
-# # look for gluino -> top + X vertices
-# filtSeq += ParentChildFilter("g_t_filter")
-# filtSeq.g_t_filter.PDGParent = [1000021] # gluino
-# filtSeq.g_t_filter.PDGChild = [6] # top quark
+    # filter efficiency is 3/9, add small margin for other inefficiencies
+    evt_multiplier = (9.0/3.0) * 1.5
 
-# # require both filters to pass
-# filtSeq.Expression = "g_b_filter and g_t_filter"
 
-# filter efficiency is 7/9 + small margin for other inefficiencies
-#evt_multiplier = (9.0/7.0) * 1.5
-evt_multiplier = 1.5
+elif final_state == '1-3top':
+    # Keep only 1-top and 3-top final states
+    filtSeq += ParticleFilter("filter_1_top")
+    filtSeq.filter_1_top.PDGID = 6 # top quark
+    filtSeq.filter_1_top.MinParts = 1
+    filtSeq.filter_1_top.Exclusive = True # require exactly 1 tops
+    filtSeq.filter_1_top.StatusReq = -1
+    filtSeq += ParticleFilter("filter_3_top")
+    filtSeq.filter_3_top.PDGID = 6 # top quark
+    filtSeq.filter_3_top.MinParts = 3
+    filtSeq.filter_3_top.Exclusive = True # require exactly 3 tops
+    filtSeq.filter_3_top.StatusReq = -1
+    filtSeq.Expression = "filter_1_top or filter_3_top"
+
+    # filter efficiency is 4/9, add small margin for other inefficiencies
+    evt_multiplier = (9.0/4.0) * 1.5
+
+
+else:
+   raise RuntimeError("invalid final state: {}".format(final_state))
+
+evgenLog.info('final state: {}'.format(final_state))
+evgenLog.info('filtSeq.Expression: {}'.format(filtSeq.Expression))
+evgenLog.info('evt_multiplier: {}'.format(evt_multiplier))
+
+
 
 include('MC15JobOptions/MadGraphControl_SimplifiedModelPostInclude.py')
 
