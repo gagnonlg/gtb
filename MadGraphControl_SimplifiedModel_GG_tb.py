@@ -44,7 +44,7 @@ from GeneratorFilters.GeneratorFiltersConf import ParticleFilter
 if final_state == '2top':
     # Keep only 2-top final states
     filtSeq += ParticleFilter("filter_2_top")
-    filtSeq.filter_2_top.PDGID = 6 # top quark
+    filtSeq.filter_2_top.PDG = 6 # top quark
     filtSeq.filter_2_top.MinParts = 2
     filtSeq.filter_2_top.Exclusive = True # require exactly 2 tops
     filtSeq.filter_2_top.StatusReq = -1
@@ -58,13 +58,13 @@ if final_state == '2top':
 elif final_state == '1-3top':
     # Keep only 1-top and 3-top final states
     filtSeq += ParticleFilter("filter_1_top")
-    filtSeq.filter_1_top.PDGID = 6 # top quark
+    filtSeq.filter_1_top.PDG = 6 # top quark
     filtSeq.filter_1_top.MinParts = 1
     filtSeq.filter_1_top.Exclusive = True # require exactly 1 tops
     filtSeq.filter_1_top.StatusReq = -1
     filtSeq.filter_1_top.Ptmin = 0
     filtSeq += ParticleFilter("filter_3_top")
-    filtSeq.filter_3_top.PDGID = 6 # top quark
+    filtSeq.filter_3_top.PDG = 6 # top quark
     filtSeq.filter_3_top.MinParts = 3
     filtSeq.filter_3_top.Exclusive = True # require exactly 3 tops
     filtSeq.filter_3_top.StatusReq = -1
