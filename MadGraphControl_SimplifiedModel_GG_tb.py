@@ -41,18 +41,40 @@ if njets>0:
 # Setup the filters
 from GeneratorFilters.GeneratorFiltersConf import ParticleFilter
 
-if final_state == '2top':
+if final_state in ['2top', '2topC1']:
     # Keep only 2-top final states
+    
     filtSeq += ParticleFilter("filter_2_top")
     filtSeq.filter_2_top.PDG = 6 # top quark
     filtSeq.filter_2_top.MinParts = 2
     filtSeq.filter_2_top.Exclusive = True # require exactly 2 tops
     filtSeq.filter_2_top.StatusReq = -1
     filtSeq.filter_2_top.Ptcut = 0
-    filtSeq.Expression = "filter_2_top"
 
-    # filter efficiency is 3/9, add small margin for other inefficiencies
-    evt_multiplier = (9.0/3.0) * 1.5
+    filtSeq += ParticleFilter("filter_chargino")
+    filtSeq.filter_chargino.PDG = 1000024
+    filtSeq.filter_chargino.MinParts = 2
+    filtSeq.filter_chargino.Exclusive = True # exactly 2 charginos
+    filtSeq.filter_chargino.StatusReq = -1
+    filtSeq.filter_chargino.Ptcut = 0
+
+    if final_state == '2top':
+        # keep only events where tops from same gluino
+        # this means there are no charginos in the final stat
+        filtSeq.Expression = "filter_2_top and (not filter_chargino)"
+
+        # filter efficiency is 2/9
+        evt_multiplier = 9.0/2.0
+
+    else:
+        # final_state == '2topC1'
+        # keep only events where tops from different gluinos
+        # this means there are exactly 2 charginos in final state
+        filtSeq.Expression = "filter_2_top and filter_chargino"
+
+        # filter efficiency is 1/9
+        evt_multiplier = 9.0
+
 
 
 elif final_state == '1-3top':
@@ -71,12 +93,15 @@ elif final_state == '1-3top':
     filtSeq.filter_3_top.Ptcut = 0
     filtSeq.Expression = "filter_1_top or filter_3_top"
 
-    # filter efficiency is 4/9, add small margin for other inefficiencies
-    evt_multiplier = (9.0/4.0) * 1.5
+    # filter efficiency is 4/9
+    evt_multiplier = 9.0/4.0
 
 
 else:
    raise RuntimeError("invalid final state: {}".format(final_state))
+
+# add small margin for inefficiencies
+evt_multiplier *= 1.5
 
 evgenLog.info('final state: {}'.format(final_state))
 evgenLog.info('filtSeq.Expression: {}'.format(filtSeq.Expression))

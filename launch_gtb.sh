@@ -6,8 +6,10 @@ cd ${PBS_JOBID}_${PBS_JOBNAME}
 
 git clone $REPO .
 
-if [ "$NAME" = "2top" ]; then
+if [ "$NAME" = "2topC1" ]; then
     maxEvents=10000
+elif [ "$NAME" = "2top" ]; then
+    maxEvents=4000
 else
     maxEvents=6000
 fi
