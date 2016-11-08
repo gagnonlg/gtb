@@ -11,7 +11,8 @@ if [ "$NAME" = "2topC1" ]; then
 elif [ "$NAME" = "2top" ]; then
     maxEvents=4000
 else
-    maxEvents=6000
+    # 1top or 3top
+    maxEvents=3000
 fi
 
 export ATHENA_PROC_NUMBER=$NJOBS
