@@ -91,7 +91,7 @@ elif final_state == '1top':
     evt_multiplier = 9.0/2.0
 
 
-elif final_stat == '3top':
+elif final_state == '3top':
     # keep only 3-top final states
     filtSeq += ParticleFilter("filter_3_top")
     filtSeq.filter_3_top.PDG = 6 # top quark
