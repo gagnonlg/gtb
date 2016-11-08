@@ -77,24 +77,32 @@ if final_state in ['2top', '2topC1']:
 
 
 
-elif final_state == '1-3top':
-    # Keep only 1-top and 3-top final states
+elif final_state == '1top':
+    # Keep only 1-top
     filtSeq += ParticleFilter("filter_1_top")
     filtSeq.filter_1_top.PDG = 6 # top quark
     filtSeq.filter_1_top.MinParts = 1
     filtSeq.filter_1_top.Exclusive = True # require exactly 1 tops
     filtSeq.filter_1_top.StatusReq = -1
     filtSeq.filter_1_top.Ptcut = 0
+    filtSeq.Expression = "filter_1_top"
+
+    # filter efficiency is 2/9
+    evt_multiplier = 9.0/2.0
+
+
+elif final_stat == '3top':
+    # keep only 3-top final states
     filtSeq += ParticleFilter("filter_3_top")
     filtSeq.filter_3_top.PDG = 6 # top quark
     filtSeq.filter_3_top.MinParts = 3
     filtSeq.filter_3_top.Exclusive = True # require exactly 3 tops
     filtSeq.filter_3_top.StatusReq = -1
     filtSeq.filter_3_top.Ptcut = 0
-    filtSeq.Expression = "filter_1_top or filter_3_top"
+    filtSeq.Expression = "filter_3_top"
 
-    # filter efficiency is 4/9
-    evt_multiplier = 9.0/4.0
+    # filter efficiency is 2/9
+    evt_multiplier = 9.0/2.0
 
 
 else:
