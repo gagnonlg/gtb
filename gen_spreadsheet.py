@@ -17,15 +17,10 @@ def make_row(descr, dsid, jobopt, fs, af2):
         '','','',''
     ])
 
-def make_sample(dsid, gluino_mass, lsp_mass, final_state):
-    descr = 'GG_tb_{}_5000_{}_{}'.format(gluino_mass, lsp_mass, final_state)
+def make_point(dsid, gluino_mass, lsp_mass):
+    descr = 'GG_tb_{}_5000_{}'.format(gluino_mass, lsp_mass)
 
-    if final_state in ['1top', '3top']:
-        stats=3000
-    elif final_state == '2topC1':
-        stats=10000
-    else: # final_state == '2top':
-        stats=40000
+    stats = 25000
 
     return make_row(
         descr=descr,
@@ -34,13 +29,6 @@ def make_sample(dsid, gluino_mass, lsp_mass, final_state):
         fs=(stats if gluino_mass == 2300 and lsp_mass == 1 else 0),
         af2=stats
     )
-
-def make_point(start_dsid, gluino_mass, lsp_mass):
-    rows = []
-    for i, state in enumerate(['1top', '2top', '2topC1', '3top']):
-        rows.append(make_sample(start_dsid + i, gluino_mass, lsp_mass, state))
-    return '\n'.join(rows)
-
 
 header='Brief description,Data set ID,"ESD, RDO, DESD",JobOptions,Events (fullsim),Events (atlfast-II),Priority,Evgen,Simul,Merge,Digi,Reco,Rec merge,Rec tag,Atlfast,Atlfast merge,Atlfast tag,Cross-section,Filter eff,NLO xsec,Generator,Ecm,Release,Comment,Response,Trigger,Frozen shower,Filtered pile-up truth'
 
@@ -54,13 +42,13 @@ masses = [
     (1900,600),
     (2100,600),
     (2300,600),
+    (1600,1000),
     (1800,1000),
     (2000,1000),
     (2100,1000),
-    (1600,1000),
 ]
 
 print header
 
 for i, (mg, ml) in enumerate(masses):
-    print make_point(start_dsid + i*4, mg, ml)
+    print make_point(start_dsid + i, mg, ml)
