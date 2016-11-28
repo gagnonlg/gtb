@@ -1,46 +1,26 @@
 include ( 'MC15JobOptions/MadGraphControl_SimplifiedModelPreInclude.py' )
 
+masses['1000021'] = float(runArgs.jobConfig[0].split("_")[4])
+masses['1000005'] = float(runArgs.jobConfig[0].split("_")[5])
+masses['1000006'] = float(runArgs.jobConfig[0].split("_")[5])
+masses['1000022'] = float(runArgs.jobConfig[0].split("_")[6].split('.')[0]) 
+masses['1000024'] = float(runArgs.jobConfig[0].split("_")[6].split('.')[0])+2
+if masses['1000022']<0.5: masses['1000022']=0.5
 
-fields = runArgs.jobConfig[0].replace(".py","").split("_")
-# 0                   1        2  3  4        5        6
-# MC15.<dsid>.MGPy8EG_A14N23LO_GG_tb_<gluino>_<squark>_<neutralino>.py
-
-gentype = fields[2]
-decaytype = fields[3]
-gluino_mass = float(fields[4])
-squark_mass = float(fields[5])
-neutralino_mass = float(fields[6])
-
-masses['1000021'] = gluino_mass
-masses['1000005'] = squark_mass # sbottom
-masses['1000006'] = squark_mass # stop
-masses['1000022'] = neutralino_mass
-masses['1000024'] = neutralino_mass + 2 # chargino_1
+gentype = str(runArgs.jobConfig[0].split("_")[2])
+decaytype = str(runArgs.jobConfig[0].split("_")[3])
 
 process = '''
 generate p p > go go $ susysq susysq~ @1
 add process p p > go go j $ susysq susysq~ @2
 add process p p > go go j j $ susysq susysq~ @3
 '''
+
 njets = 2
+evgenLog.info('Registered generation of Gtb grid '+str(runArgs.runNumber))
 
-evgenLog.info('Gtb grid point {}'.format(runArgs.runNumber))
-evgenLog.info('gluino mass: {}'.format(gluino_mass))
-evgenLog.info('squark mass: {}'.format(squark_mass))
-evgenLog.info('neutralino mass: {}'.format(neutralino_mass))
-
-evgenConfig.contact  = ["louis.guillaume.gagnon@cern.ch"]
-evgenConfig.keywords += ['simplifiedModel', 'gluino', 'neutralino', 'SUSY', 'boosted', 'top', 'bottom']
-evgenConfig.description = 'gluino pair production and decay to tops and bottoms + LSP via off-shell stops and/or sbottoms'
-
-
-if njets>0:
-    genSeq.Pythia8.Commands += ["Merging:Process = pp>{go,1000021}{go,1000021}"]
-
-# Setup the filters to veto Gtt and Gbb events
-from GeneratorFilters.GeneratorFiltersConf import ParticleFilter
-
-# recognize Gtt events
+include ( 'MC15JobOptions/ParticleFilter.py' )
+evgenLog.info('Gtt_filter is applied')
 filtSeq += ParticleFilter("Gtt_filter")
 filtSeq.Gtt_filter.PDG = 6 # top quark
 filtSeq.Gtt_filter.MinParts = 4
@@ -48,6 +28,7 @@ filtSeq.Gtt_filter.Exclusive = True # require exactly 4 tops
 filtSeq.Gtt_filter.StatusReq = -1 # ignore status
 filtSeq.Gtt_filter.Ptcut = 0
 
+evgenLog.info('top_filter is applied')
 filtSeq += ParticleFilter("top_filter")
 filtSeq.top_filter.PDG = 6 # top quark
 filtSeq.top_filter.MinParts = 1
@@ -57,14 +38,14 @@ filtSeq.top_filter.Ptcut = 0
 
 filtSeq.Expression = "(not Gtt_filter) and top_filter"
 
-# filter efficiency is 7/9
-# add small margin for inefficiencies
-evt_multiplier = 9.0/7.0 * 1.5
+evgenConfig.contact  = ["louis.guillaume.gagnon@cern.ch"]
+evgenConfig.keywords += ['simplifiedModel', 'gluino', 'neutralino', 'SUSY', 'stop', 'sbottom']
+evgenConfig.description = 'gluino pair production and decay via off-shell stops and/or sbottoms, m_glu = %s GeV, m_stop/sbottom = %s GeV, m_N1 = %s GeV, m_C1 = % GeV'%(masses['1000021'],masses['1000005'],masses['1000022'])
 
-evgenLog.info('filtSeq.Expression: {}'.format(filtSeq.Expression))
-evgenLog.info('evt_multiplier: {}'.format(evt_multiplier))
-
-
+genSeq.Pythia8.Commands += ["23:mMin = 0.2"]
 
 include('MC15JobOptions/MadGraphControl_SimplifiedModelPostInclude.py')
+
+if njets>0:
+    genSeq.Pythia8.Commands += ["Merging:Process = pp>{go,1000021}{go,1000021}"]
 
