@@ -40,7 +40,7 @@ filtSeq.Expression = "(not Gtt_filter) and top_filter"
 
 evgenConfig.contact  = ["louis.guillaume.gagnon@cern.ch"]
 evgenConfig.keywords += ['simplifiedModel', 'gluino', 'neutralino', 'SUSY', 'stop', 'sbottom']
-evgenConfig.description = 'gluino pair production and decay via off-shell stops and/or sbottoms, m_glu = %s GeV, m_stop/sbottom = %s GeV, m_N1 = %s GeV, m_C1 = % GeV'%(masses['1000021'],masses['1000005'],masses['1000022'])
+evgenConfig.description = 'gluino pair production and decay via off-shell stops and/or sbottoms, m_glu = %s GeV, m_stop/sbottom = %s GeV, m_N1 = %s GeV, m_C1 = % GeV'%(masses['1000021'],masses['1000005'],masses['1000022'],masses['1000024'])
 
 genSeq.Pythia8.Commands += ["23:mMin = 0.2"]
 
