@@ -2,7 +2,7 @@ set -u
 set -e
 
 cat <<EOF | qsub -d $PWD -N gtb-testjob-1 -j oe -l nice=0
-rm -f testjob-1
+rm -rf testjob-1
 mkdir -p testjob-1
 cd testjob-1
 . /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase/user/atlasLocalSetup.sh
@@ -14,7 +14,7 @@ EOF
 sleep 0.5s
 
 cat <<EOF | qsub -d $PWD -N gtb-testjob-2 -j oe -l nice=0
-rm -f testjob-2
+rm -rf testjob-2
 mkdir -p testjob-2
 cd testjob-2
 . /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase/user/atlasLocalSetup.sh
@@ -26,7 +26,7 @@ EOF
 sleep 0.5s
 
 cat <<EOF | qsub -d $PWD -N gtb-testjob-3 -j oe -l nice=0
-rm -f testjob-3
+rm -rf testjob-3
 mkdir -p testjob-3
 cd testjob-3
 . /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase/user/atlasLocalSetup.sh
