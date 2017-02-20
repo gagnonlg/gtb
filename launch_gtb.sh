@@ -6,7 +6,7 @@ cd ${PBS_JOBID}_${PBS_JOBNAME}
 
 git clone $REPO .
 
-maxEvents=25000
+maxEvents=10000
 
 export ATHENA_PROC_NUMBER=$NJOBS
 Generate_tf.py --ecmEnergy=13000. \
