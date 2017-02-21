@@ -36,7 +36,7 @@ filtSeq.top_filter.Exclusive = False # require >= 1 top
 filtSeq.top_filter.StatusReq = -1 # ignore status
 filtSeq.top_filter.Ptcut = 0
 
-#filtSeq.Expression = "(not Gtt_filter) and top_filter"
+filtSeq.Expression = "(not Gtt_filter) and top_filter"
 
 evgenConfig.contact  = ["louis.guillaume.gagnon@cern.ch"]
 evgenConfig.keywords += ['simplifiedModel', 'gluino', 'neutralino', 'SUSY', 'stop', 'sbottom']
