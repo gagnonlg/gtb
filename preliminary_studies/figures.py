@@ -100,8 +100,8 @@ def get_hists_2a_vs_2b(variable):
 #get_hists=get_hists_1_vs_2_vs_3
 #get_hists=get_hists_0_vs_1
 #get_hists=get_hists_3_vs_4
-get_hists=get_hists_0_vs_1_vs_2_vs_3_vs_4
-# get_hists=get_hists_2a_vs_2b
+#get_hists=get_hists_0_vs_1_vs_2_vs_3_vs_4
+get_hists=get_hists_2a_vs_2b
 
 
 def graph(variable, title, xlims=None, ylims=None, rebin=1, log=False):
